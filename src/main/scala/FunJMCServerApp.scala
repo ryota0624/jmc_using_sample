@@ -10,6 +10,7 @@ import pureconfig._
 import pureconfig.generic.auto._
 
 case class FunJMCServerConfig(
+    host: String,
     port: Int
 )
 
@@ -41,10 +42,10 @@ object FunJMCServerApp {
         }
       }
 
-    val bindingFuture = Http().newServerAt("localhost", config.port).bind(route)
+    val bindingFuture = Http().newServerAt(config.host, config.port).bind(route)
 
     println(
-      s"Server online at http://localhost:${config.port}/\nPress `exit` to stop..."
+      s"Server online at http://${config.host}:${config.port}/\nPress `exit` to stop..."
     )
 
     var input = StdIn.readLine()
