@@ -28,7 +28,7 @@ val root = (project in file("."))
     javaOptions in Universal ++= Seq(
       // -J params will be added as jvm parameters
       // IntelliJ debug
-      "-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005",
+      "-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005",
       // JMC
       "-J-Dcom.sun.management.jmxremote.rmi.port=7091",
       "-J-Dcom.sun.management.jmxremote.port=7091",
