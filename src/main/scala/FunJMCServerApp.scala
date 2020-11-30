@@ -1,3 +1,5 @@
+import java.util.UUID
+
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
@@ -9,6 +11,8 @@ import scala.io.StdIn
 import pureconfig._
 import pureconfig.generic.auto._
 
+import scala.collection.mutable
+
 case class FunJMCServerConfig(
     host: String,
     port: Int
@@ -16,11 +20,30 @@ case class FunJMCServerConfig(
 
 class FunJMCServerApp {}
 
+class IncrementalData(
+    @volatile private var idSeq: mutable.ArrayBuffer[String] =
+      mutable.ArrayBuffer()
+) {
+  def increment(): Unit =
+    synchronized {
+      idSeq += UUID.randomUUID().toString
+    }
+
+  def clear(): Unit =
+    synchronized {
+      idSeq = mutable.ArrayBuffer()
+    }
+
+  def size(): Int = idSeq.length
+}
+
 object FunJMCServerApp {
   def main(args: Array[String]): Unit = {
 
+    val incrementalData = new IncrementalData()
+
     implicit val system: ActorSystem[Nothing] =
-      ActorSystem(Behaviors.empty, "fun-m")
+      ActorSystem(Behaviors.empty, "fun-jmc")
     implicit val executionContext: ExecutionContextExecutor =
       system.executionContext
 
@@ -37,6 +60,27 @@ object FunJMCServerApp {
             HttpEntity(
               ContentTypes.`text/html(UTF-8)`,
               "<h1>Say hello to akka-http</h1>"
+            )
+          )
+        }
+      } ~ path("increment") {
+        post {
+          system.log.info("called increment")
+          incrementalData.increment();
+          complete(
+            HttpEntity(
+              ContentTypes.`text/html(UTF-8)`,
+              s"<h1>data length: ${incrementalData.size()}</h1>"
+            )
+          )
+        }
+      } ~ path("clear") {
+        post {
+          incrementalData.clear();
+          complete(
+            HttpEntity(
+              ContentTypes.`text/html(UTF-8)`,
+              s"<h1>cleared data</h1>"
             )
           )
         }
