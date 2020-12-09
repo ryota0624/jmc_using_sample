@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
@@ -39,6 +40,7 @@ class IncrementalData(
 
 object FunJMCServerApp {
   def main(args: Array[String]): Unit = {
+    LoggerFactory.getLogger(getClass)
 
     val incrementalData = new IncrementalData()
 
@@ -63,6 +65,13 @@ object FunJMCServerApp {
             )
           )
         }
+      } ~ path("size") {
+        complete(
+          HttpEntity(
+            ContentTypes.`text/html(UTF-8)`,
+            s"<h1>data size: ${incrementalData.size()}</h1>"
+          )
+        )
       } ~ path("increment") {
         post {
           system.log.info("called increment")
@@ -70,7 +79,7 @@ object FunJMCServerApp {
           complete(
             HttpEntity(
               ContentTypes.`text/html(UTF-8)`,
-              s"<h1>data length: ${incrementalData.size()}</h1>"
+              s"<h1>data size: ${incrementalData.size()}</h1>"
             )
           )
         }
@@ -96,7 +105,7 @@ object FunJMCServerApp {
     while (input != "exit") {
       input = StdIn.readLine()
     }
-    system.log.info("pressed `exit.` start shutdown.")
+    println("pressed `exit.` start shutdown.")
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
       .onComplete(_ => system.terminate()) // and shutdown when done
