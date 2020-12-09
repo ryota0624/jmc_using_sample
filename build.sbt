@@ -1,3 +1,5 @@
+import sbt.Keys.javaOptions
+
 version := "0.1"
 
 scalaVersion := "2.13.4"
@@ -12,6 +14,18 @@ val akkaLibraries = Seq(
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion
+)
+
+val jvmDebugOptions = Seq(
+  // IntelliJ debug
+  "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005",
+  // JMC
+  "-Dcom.sun.management.jmxremote.rmi.port=7091",
+  "-Dcom.sun.management.jmxremote.port=7091",
+  "-Djava.rmi.server.hostname=127.0.0.1",
+  "-Dcom.sun.management.jmxremote=true",
+  "-Dcom.sun.management.jmxremote.authenticate=false",
+  "-Dcom.sun.management.jmxremote.ssl=false"
 )
 
 val root = (project in file("."))
@@ -29,18 +43,8 @@ val root = (project in file("."))
       "ch.qos.logback" % "logback-classic" % "1.2.3" % Runtime,
       "com.github.pureconfig" %% "pureconfig" % "0.14.0"
     ),
-    javaOptions in Universal ++= Seq(
-      // -J params will be added as jvm parameters
-      // IntelliJ debug
-      "-J-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005",
-      // JMC
-      "-J-Dcom.sun.management.jmxremote.rmi.port=7091",
-      "-J-Dcom.sun.management.jmxremote.port=7091",
-      "-J-Djava.rmi.server.hostname=127.0.0.1",
-      "-J-Dcom.sun.management.jmxremote=true",
-      "-J-Dcom.sun.management.jmxremote.authenticate=false",
-      "-J-Dcom.sun.management.jmxremote.ssl=false"
-    )
+    javaOptions ++= jvmDebugOptions,
+    javaOptions in Universal ++= jvmDebugOptions
   )
 
 val client = (project in file("./client"))
