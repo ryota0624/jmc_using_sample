@@ -115,6 +115,9 @@ sbt run
 
 ![](./images/jmc-flight-recorder-record-memory.png)
 
+watch frame view
+
+window -> view -> stacktrace
 
 ### Run From Command Line
 

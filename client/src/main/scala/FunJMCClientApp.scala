@@ -1,3 +1,4 @@
+import akka.actor.Cancellable
 import akka.actor.typed.scaladsl.AskPattern._
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, ActorSystem, Behavior}
@@ -10,6 +11,7 @@ import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import pureconfig._
 import pureconfig.generic.auto._
+
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
@@ -33,7 +35,7 @@ object FunJMCClientApp {
     ) =
       Try(args.map(_.toInt))
         .filter(array => array.length >= 4)
-        .getOrElse(Array(10, 1, 10, 2))
+        .getOrElse(Array(600, 1, 120, 4))
 
     implicit val timeout: Timeout = executingDuration.seconds + 30.seconds
 
@@ -154,7 +156,7 @@ object Requester {
           occurredTimeout = false,
           count * executingDuration,
           completedReplayTo,
-          cancel.cancel
+          cancel
         )
       })
     )
@@ -164,32 +166,35 @@ object Requester {
       occurredTimeout: Boolean,
       totalCompletedCountFinally: Int,
       completedReplayTo: ActorRef[Completed],
-      cancel: () => Boolean
+      cancellable: Cancellable
   ): Behavior[Msg] = {
     Behaviors.setup { ctx =>
       Behaviors.receiveMessage[Msg] {
         case Timeout =>
-          cancel()
+          if (!cancellable.isCancelled) {
+            cancellable.cancel()
+          }
           active(
             completedRequestCount,
             occurredTimeout = true,
             totalCompletedCountFinally,
             completedReplayTo,
-            cancel
+            cancellable
           )
-        case RequestCompleted(id, _) =>
+        case RequestCompleted(id, response) =>
           ctx.log.debug(s"completed request ${id}")
           val nextCompletedRequestCount = completedRequestCount + 1
           if (nextCompletedRequestCount == totalCompletedCountFinally) {
-            completedReplayTo ! Completed()
-            Behaviors.empty
+            cancellable.cancel()
+            ctx.scheduleOnce(5.seconds, completedReplayTo, Completed())
+            Behaviors.stopped
           } else {
             active(
               nextCompletedRequestCount,
               occurredTimeout,
               totalCompletedCountFinally,
               completedReplayTo,
-              cancel
+              cancellable
             )
           }
       }
