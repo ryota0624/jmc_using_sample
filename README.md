@@ -164,3 +164,10 @@ jcmd $FunJMCServerApp_PID JFR.start duration=60s filename=./record_$(date "+%Y%m
 4. when the set time has passed, or `.jfr` file be fulfilled!
 
 5. open `.jfr` file by JMC, and you can see results.
+
+6. start record when application started
+
+```
+# add option to JAVA_OPTS
+-XX:StartFlightRecording=duration=600s,filename=/dump/start.jfr
+```
